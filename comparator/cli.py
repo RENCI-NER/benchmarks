@@ -15,12 +15,13 @@ logging.basicConfig(level=logging.INFO)
 
 @click.command(name="comparator")
 @click.argument('input-file', type=click.File('r'), default='-')
+@click.option('--output', type=click.File('w'), default='-', help='The file where results should be written as a CSV.')
 @click.option('--query', type=str, default='query', help='The CSV field containing the query text.')
 @click.option('--biolink-type', type=str, default='biolink_type', help='The CSV field containing the Biolink type of the query.')
 @click.option('engines', '--engine', '-e', type=str, multiple=True, help='The engines to compare')
 @click.option('--csv-dialect', type=click.Choice(csv.list_dialects(), case_sensitive=False),
               help='The CSV dialect to use (see the Python `csv` module for options).')
-def comparator(input_file, query, biolink_type, engines, csv_dialect):
+def comparator(input_file, output, query, biolink_type, engines, csv_dialect):
     """
     Run one or more NERs on an input file and produce comparative results.
 
@@ -34,6 +35,14 @@ def comparator(input_file, query, biolink_type, engines, csv_dialect):
 
     # Read the CSV file input_file with the CSV DictReader.
     reader = csv.DictReader(input_file, dialect=csv_dialect)
+    header = reader.fieldnames
+
+    for engine in engines:
+        # TODO: add columns for results from each engine.
+        pass
+
+    csv_writer = csv.DictWriter(output, fieldnames=header)
+
     for row in reader:
         if query not in row:
             logging.error(f"Query field '{query}' not found in CSV row: {row}")
@@ -45,7 +54,7 @@ def comparator(input_file, query, biolink_type, engines, csv_dialect):
             continue
         text_type = row.get(biolink_type, '')
 
-        print(f"Querying '{text}' with type {text_type}.")
+        csv_writer.writerow(row)
 
 
 if __name__ == '__main__':
