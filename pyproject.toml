@@ -1,0 +1,18 @@
+[project]
+name = "benchmarks"
+version = "0.1.0"
+description = "Benchmarks for comparing NER tools."
+authors = [
+    {name = "Gaurav Vaidya", email = "gaurav@renci.org"},
+]
+dependencies = [
+    "pytest",
+    "black",
+]
+requires-python = ">3.11.*"
+readme = "README.md"
+license = {text = "MIT"}
+
+
+[tool.pdm]
+distribution = false
