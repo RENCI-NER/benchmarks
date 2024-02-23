@@ -15,7 +15,10 @@ readme = "README.md"
 license = {text = "MIT"}
 
 [tool.pdm.scripts]
-comparator = {call = "benchmarks.comparator:comparator"}
+comparator = {call = "comparator.cli:comparator"}
+
+[projects.scripts]
+comparator = "comparator:cli.comparator"
 
 [tool.pdm]
 distribution = false
