@@ -6,13 +6,16 @@ authors = [
     {name = "Gaurav Vaidya", email = "gaurav@renci.org"},
 ]
 dependencies = [
+    "click",
     "pytest",
     "black",
 ]
-requires-python = ">3.11.*"
+requires-python = "==3.11.*"
 readme = "README.md"
 license = {text = "MIT"}
 
+[tool.pdm.scripts]
+comparator = {call = "benchmarks.comparator:comparator"}
 
 [tool.pdm]
 distribution = false
