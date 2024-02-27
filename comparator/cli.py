@@ -9,6 +9,7 @@ import csv
 
 import click
 from comparator.engines.nameres import NameResNEREngine
+from comparator.engines.sapbert import SAPBERTNEREngine
 
 # Set up basic logging.
 logging.basicConfig(level=logging.INFO)
@@ -46,7 +47,11 @@ def comparator(input_file, output, query, biolink_type, engines, csv_dialect):
     nameres = NameResNEREngine()
     header.extend(['nameres_id', 'nameres_label', 'nameres_type', 'nameres_score'])
 
+    sapbert = SAPBERTNEREngine()
+    header.extend(['sapbert_id', 'sapbert_label', 'sapbert_type', 'sapbert_score'])
+
     csv_writer = csv.DictWriter(output, fieldnames=header)
+    csv_writer.writeheader()
 
     for row in reader:
         if query not in row:
@@ -70,6 +75,18 @@ def comparator(input_file, output, query, biolink_type, engines, csv_dialect):
             row['nameres_label'] = nameres_results[0]['label']
             row['nameres_type'] = nameres_results[0]['biolink_type']
             row['nameres_score'] = nameres_results[0]['score']
+
+        # Get top SAPBERT result.
+        sapbert_results = sapbert.annotate(text, {
+            'biolink_type': text_type,
+        }, limit=10)
+        logging.info(f"Found SAPBERT results for '{text}': {sapbert_results}")
+
+        if len(sapbert_results) > 0:
+            row['sapbert_id'] = sapbert_results[0]['id']
+            row['sapbert_label'] = sapbert_results[0]['label']
+            row['sapbert_type'] = sapbert_results[0]['biolink_type']
+            row['sapbert_score'] = sapbert_results[0]['score']
 
         csv_writer.writerow(row)
 
