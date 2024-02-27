@@ -1,9 +1,11 @@
 import os
 import logging
+import urllib
 
 import requests
 
 from comparator.engines.base import BaseNEREngine
+
 
 # Configuration: get the SAPBERT URL and figure out the annotate path.
 SAPBERT_URL = os.getenv('SAPBERT_URL', 'https://babel-sapbert.apps.renci.org/')
