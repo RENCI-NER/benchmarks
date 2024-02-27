@@ -8,6 +8,7 @@ import logging
 import csv
 
 import click
+from comparator.engines.nameres import NameResNEREngine
 
 # Set up basic logging.
 logging.basicConfig(level=logging.INFO)
@@ -35,11 +36,15 @@ def comparator(input_file, output, query, biolink_type, engines, csv_dialect):
 
     # Read the CSV file input_file with the CSV DictReader.
     reader = csv.DictReader(input_file, dialect=csv_dialect)
-    header = reader.fieldnames
+    header = list(reader.fieldnames)
 
     for engine in engines:
         # TODO: add columns for results from each engine.
         pass
+
+    # Set up engine.
+    nameres = NameResNEREngine()
+    header.extend(['nameres_id', 'nameres_label', 'nameres_type', 'nameres_score'])
 
     csv_writer = csv.DictWriter(output, fieldnames=header)
 
@@ -53,6 +58,18 @@ def comparator(input_file, output, query, biolink_type, engines, csv_dialect):
             logging.warning(f"Type field '{biolink_type}' not found in CSV row: {row}")
             continue
         text_type = row.get(biolink_type, '')
+
+        # Get top NameRes result.
+        nameres_results = nameres.annotate(text, {
+            'biolink_type': text_type,
+        }, limit=10)
+        logging.info(f"Found NameRes results for '{text}': {nameres_results}")
+
+        if len(nameres_results) > 0:
+            row['nameres_id'] = nameres_results[0]['id']
+            row['nameres_label'] = nameres_results[0]['label']
+            row['nameres_type'] = nameres_results[0]['biolink_type']
+            row['nameres_score'] = nameres_results[0]['score']
 
         csv_writer.writerow(row)
 
