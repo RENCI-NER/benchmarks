@@ -9,6 +9,7 @@ dependencies = [
     "click",
     "pytest",
     "black",
+    "requests>=2.31.0",
 ]
 requires-python = "==3.11.*"
 readme = "README.md"
