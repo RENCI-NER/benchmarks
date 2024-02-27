@@ -8,6 +8,10 @@ import logging
 import csv
 
 import click
+import requests
+
+from requests.adapters import HTTPAdapter, Retry
+
 from comparator.engines.nameres import NameResNEREngine
 from comparator.engines.sapbert import SAPBERTNEREngine
 
@@ -32,6 +36,15 @@ def comparator(input_file, output, query, biolink_type, engines, csv_dialect):
     INPUT_FILE: the file to process. Use '-' to use the standard input stream.
     """
 
+    # Set up a repeatable session.
+    session = requests.Session()
+    retries = Retry(total=5,
+                    backoff_factor=0.1,
+                    status_forcelist=[ 500, 502, 503, 504 ]
+                    )
+    session.mount('http://', HTTPAdapter(max_retries=retries))
+    session.mount('https://', HTTPAdapter(max_retries=retries))
+
     # Set up engines.
     # TODO
 
@@ -44,10 +57,10 @@ def comparator(input_file, output, query, biolink_type, engines, csv_dialect):
         pass
 
     # Set up engine.
-    nameres = NameResNEREngine()
+    nameres = NameResNEREngine(session)
     header.extend(['nameres_id', 'nameres_label', 'nameres_type', 'nameres_score'])
 
-    sapbert = SAPBERTNEREngine()
+    sapbert = SAPBERTNEREngine(session)
     header.extend(['sapbert_id', 'sapbert_label', 'sapbert_type', 'sapbert_score'])
 
     csv_writer = csv.DictWriter(output, fieldnames=header)
@@ -65,10 +78,14 @@ def comparator(input_file, output, query, biolink_type, engines, csv_dialect):
         text_type = row.get(biolink_type, '')
 
         # Get top NameRes result.
-        nameres_results = nameres.annotate(text, {
-            'biolink_type': text_type,
-        }, limit=10)
-        logging.info(f"Found NameRes results for '{text}': {nameres_results}")
+        nameres_results = []
+        try:
+            nameres_results = nameres.annotate(text, {
+                'biolink_type': text_type,
+            }, limit=10)
+            logging.info(f"Found NameRes results for '{text}': {nameres_results}")
+        except Exception as inst:
+            logging.error(f"Could not look up {text}: {inst}")
 
         if len(nameres_results) > 0:
             row['nameres_id'] = nameres_results[0]['id']
@@ -77,10 +94,14 @@ def comparator(input_file, output, query, biolink_type, engines, csv_dialect):
             row['nameres_score'] = nameres_results[0]['score']
 
         # Get top SAPBERT result.
-        sapbert_results = sapbert.annotate(text, {
-            'biolink_type': text_type,
-        }, limit=10)
-        logging.info(f"Found SAPBERT results for '{text}': {sapbert_results}")
+        sapbert_results = []
+        try:
+            sapbert_results = sapbert.annotate(text, {
+                'biolink_type': text_type,
+            }, limit=10)
+            logging.info(f"Found SAPBERT results for '{text}': {sapbert_results}")
+        except Exception as inst:
+            logging.error(f"Could not look up {text}: {inst}")
 
         if len(sapbert_results) > 0:
             row['sapbert_id'] = sapbert_results[0]['id']

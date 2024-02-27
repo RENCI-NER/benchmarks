@@ -13,6 +13,17 @@ NODE_NORM_ENDPOINT = os.getenv('NODE_NORM_ENDPOINT', 'https://nodenormalization-
 
 
 class NameResNEREngine(BaseNEREngine):
+    def __init__(self, requests_session):
+        """
+        Create a NameResNEREngine.
+
+        :param requests_session: A Requests session to use for HTTP/HTTPS requests.
+        """
+        if requests_session:
+            self.requests_session = requests_session
+        else:
+            self.requests_session = requests.Session()
+
     def annotate(self, text, props, limit=1):
         annotations = []
 
@@ -34,8 +45,7 @@ class NameResNEREngine(BaseNEREngine):
         if skip_umls:
             nameres_options['exclude_prefixes'] = 'UMLS'
 
-
-        response = requests.get(NAMERES_ENDPOINT, params=nameres_options)
+        response = self.requests_session.get(NAMERES_ENDPOINT, params=nameres_options)
         logging.debug(f"Response from NameRes: {response.content}")
         if not response.ok:
             raise RuntimeError(f"Could not contact NameRes: {response}")

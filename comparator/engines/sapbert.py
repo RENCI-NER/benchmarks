@@ -15,6 +15,17 @@ SAPBERT_COUNT = 10000 # We've found that 1000 is about the minimum you need for 
 
 
 class SAPBERTNEREngine(BaseNEREngine):
+    def __init__(self, requests_session):
+        """
+        Create a SAPBERTNEREngine.
+
+        :param requests_session: A Requests session to use for HTTP/HTTPS requests.
+        """
+        if requests_session:
+            self.requests_session = requests_session
+        else:
+            self.requests_session = requests.Session()
+
     def annotate(self, text, props, limit=1):
         annotations = []
 
@@ -31,7 +42,7 @@ class SAPBERTNEREngine(BaseNEREngine):
         }
 
         logging.debug(f"Request to {SAPBERT_MODEL_NAME}: {request}")
-        response = requests.post(SAPBERT_ANNOTATE_ENDPOINT, json=request)
+        response = self.requests_session.post(SAPBERT_ANNOTATE_ENDPOINT, json=request)
         logging.debug(f"Response from {SAPBERT_MODEL_NAME}: {response.content}")
         if not response.ok:
             raise RuntimeError(f"Server error from SAPBERT for text '{text}': {response}")
