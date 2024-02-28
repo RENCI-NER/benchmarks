@@ -116,6 +116,9 @@ def comparator(input_file, output, query, biolink_type, engines, csv_dialect):
 
         csv_writer.writerow(row)
 
+        # Add a sleep to make sure we don't overload Sterling's ingresses.
+        time.sleep(10)
+
 
 if __name__ == '__main__':
     comparator()

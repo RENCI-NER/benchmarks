@@ -27,8 +27,6 @@ class SAPBERTNEREngine(BaseNEREngine):
             self.requests_session = requests.Session()
 
     def annotate(self, text, props, limit=1):
-        annotations = []
-
         biolink_type = props.get('biolink_type', '')
 
         # Make a request to Nemo-Serve.
