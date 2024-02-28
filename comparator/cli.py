@@ -39,7 +39,7 @@ def comparator(input_file, output, query, biolink_type, engines, csv_dialect):
 
     # Set up a repeatable session.
     session = requests.Session()
-    retries = Retry(total=5,
+    retries = Retry(total=2,
                     backoff_factor=0.1,
                     status_forcelist=[ 500, 502, 503, 504 ]
                     )

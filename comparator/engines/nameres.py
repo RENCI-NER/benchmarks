@@ -30,8 +30,10 @@ class NameResNEREngine(BaseNEREngine):
         biolink_type = props.get('biolink_type', '')
 
         skip_umls = False
-        if props.get('skip_umls', ''):
+        if props.get('skip_umls', False):
             skip_umls = True
+
+        timeout = props.get('timeout', 10) # Default to 10 seconds
 
         # Make a request to Nemo-Serve.
         nameres_options = {
@@ -45,7 +47,7 @@ class NameResNEREngine(BaseNEREngine):
         if skip_umls:
             nameres_options['exclude_prefixes'] = 'UMLS'
 
-        response = self.requests_session.get(NAMERES_ENDPOINT, params=nameres_options)
+        response = self.requests_session.get(NAMERES_ENDPOINT, params=nameres_options, timeout=timeout)
         logging.debug(f"Response from NameRes: {response.content}")
         if not response.ok:
             raise RuntimeError(f"Could not contact NameRes: {response}")
