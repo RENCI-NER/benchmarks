@@ -59,10 +59,10 @@ def comparator(input_file, output, query, biolink_type, engines, csv_dialect):
 
     # Set up engine.
     nameres = NameResNEREngine(session)
-    header.extend(['nameres_id', 'nameres_label', 'nameres_type', 'nameres_score', 'nameres_time_ms'])
+    header.extend(['nameres_id', 'nameres_label', 'nameres_type', 'nameres_score', 'nameres_time_sec'])
 
     sapbert = SAPBERTNEREngine(session)
-    header.extend(['sapbert_id', 'sapbert_label', 'sapbert_type', 'sapbert_score', 'sapbert_time_ms'])
+    header.extend(['sapbert_id', 'sapbert_label', 'sapbert_type', 'sapbert_score', 'sapbert_time_sec'])
 
     csv_writer = csv.DictWriter(output, fieldnames=header)
     csv_writer.writeheader()
@@ -85,7 +85,6 @@ def comparator(input_file, output, query, biolink_type, engines, csv_dialect):
             nameres_results = nameres.annotate(text, {
                 'biolink_type': text_type,
             }, limit=10)
-            logging.info(f"Found NameRes results for '{text}': {nameres_results}")
         except Exception as inst:
             logging.error(f"Could not look up {text}: {inst}")
 
@@ -94,15 +93,16 @@ def comparator(input_file, output, query, biolink_type, engines, csv_dialect):
             row['nameres_label'] = nameres_results[0]['label']
             row['nameres_type'] = nameres_results[0]['biolink_type']
             row['nameres_score'] = nameres_results[0]['score']
-        row['nameres_time_ms'] = float(time.time_ns() - nameres_start)/1000
+        row['nameres_time_sec'] = f"{float(time.time_ns() - nameres_start)/1000_000_000:.5f}"
+        logging.info(f"Found NameRes results for '{text}' in {row['nameres_time_sec']} seconds: {nameres_results}")
 
         # Get top SAPBERT result.
         sapbert_results = []
+        sapbert_start = time.time_ns()
         try:
             sapbert_results = sapbert.annotate(text, {
                 'biolink_type': text_type,
             }, limit=10)
-            logging.info(f"Found SAPBERT results for '{text}': {sapbert_results}")
         except Exception as inst:
             logging.error(f"Could not look up {text}: {inst}")
 
@@ -111,7 +111,8 @@ def comparator(input_file, output, query, biolink_type, engines, csv_dialect):
             row['sapbert_label'] = sapbert_results[0]['label']
             row['sapbert_type'] = sapbert_results[0]['biolink_type']
             row['sapbert_score'] = sapbert_results[0]['score']
-        row['sapbert_time_ms'] = float(time.time_ns() - nameres_start)/1000
+        row['sapbert_time_sec'] = f"{float(time.time_ns() - sapbert_start)/1000_000_000:.5f}"
+        logging.info(f"Found SAPBERT results for '{text}' in {row['sapbert_time_sec']} seconds: {sapbert_results}")
 
         csv_writer.writerow(row)
 
