@@ -17,7 +17,7 @@ from comparator.engines.nameres import NameResNEREngine
 from comparator.engines.sapbert import SAPBERTNEREngine
 
 # Configuration
-SLEEP_BETWEEN_ROWS = 2
+SLEEP_BETWEEN_ROWS = 5
 
 # Set up basic logging.
 logging.basicConfig(level=logging.INFO)
