@@ -16,6 +16,9 @@ from requests.adapters import HTTPAdapter, Retry
 from comparator.engines.nameres import NameResNEREngine
 from comparator.engines.sapbert import SAPBERTNEREngine
 
+# Configuration
+SLEEP_BETWEEN_ROWS = 2
+
 # Set up basic logging.
 logging.basicConfig(level=logging.INFO)
 
@@ -117,7 +120,7 @@ def comparator(input_file, output, query, biolink_type, engines, csv_dialect):
         csv_writer.writerow(row)
 
         # Add a sleep to make sure we don't overload Sterling's ingresses.
-        time.sleep(10)
+        time.sleep(SLEEP_BETWEEN_ROWS)
 
 
 if __name__ == '__main__':
