@@ -41,7 +41,7 @@ def comparator(input_file, output, query, biolink_type, engines, csv_dialect):
     session = requests.Session()
     retries = Retry(total=5,
                     backoff_factor=0.1,
-                    status_forcelist=[ 500, 502, 503, 504 ]
+                    status_forcelist=[ 500, 502, 503, 504, 403 ]
                     )
     session.mount('http://', HTTPAdapter(max_retries=retries))
     session.mount('https://', HTTPAdapter(max_retries=retries))
