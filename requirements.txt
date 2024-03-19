@@ -1,0 +1,11 @@
+# For NER
+requests
+
+# For CLI
+click
+
+# For testing
+pytest
+
+# For code formatting
+black
