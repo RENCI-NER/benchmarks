@@ -7,6 +7,7 @@ from comparator.engines.base import BaseNEREngine
 
 # Configuration: NameRes
 NAMERES_ENDPOINT = os.getenv('NAMERES_ENDPOINT', 'https://name-resolution-sri-dev.apps.renci.org/lookup')
+NAMERES_RL_ENDPOINT = os.getenv('NAMERES_RL_ENDPOINT', 'https://name-resolution-sri-dev.apps.renci.org/reverse_lookup')
 
 # Configuration: the `/get_normalized_nodes` endpoint on a Node Normalization instance to use.
 NODE_NORM_ENDPOINT = os.getenv('NODE_NORM_ENDPOINT', 'https://nodenormalization-sri.renci.org/get_normalized_nodes')
@@ -75,5 +76,33 @@ class NameResNEREngine(BaseNEREngine):
             }
 
             annotations.append(annotation)
+
+        return annotations
+
+    def reverse_lookup(self,identifiers):
+        payload = { "curies": identifiers }
+        response = self.requests_session.post(NAMERES_RL_ENDPOINT, json=payload)
+
+        logging.debug(f"Response from NameRes: {response.content}")
+        if not response.ok:
+            raise RuntimeError(f"Could not contact NameRes: {response}")
+
+        results = response.json()
+        annotations = {}
+
+        for input,result in results.items():
+            biolink_types = result.get('types', [])
+            if len(biolink_types) > 0:
+                biolink_type = biolink_types[0]
+            else:
+                biolink_type = "NamedThing"
+
+            annotation = {
+                'biolink_type': biolink_type,
+                'clique_identifier_count': result.get('clique_identifier_count', ''),
+                'taxa': result.get('taxa', [])
+            }
+
+            annotations[input] = annotation
 
         return annotations
