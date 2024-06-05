@@ -80,6 +80,8 @@ def comparator(input_file, output, query, biolink_type, engines, csv_dialect):
             logging.warning(f"Type field '{biolink_type}' not found in CSV row: {row}")
             continue
         text_type = row.get(biolink_type, '')
+        if text_type.strip().lower() in {'na', 'none', 'entity', 'biolink:entity', 'namedthing', 'biolink:namedthing'}:
+            text_type = ''
 
         # Get top NameRes result.
         nameres_results = []
