@@ -17,9 +17,11 @@ license = {text = "MIT"}
 
 [tool.pdm.scripts]
 comparator = {call = "comparator.cli:comparator"}
+benchmark = {call = "benchmark.cli:benchmark"}
 
 [projects.scripts]
 comparator = "comparator:cli.comparator"
+benchmark = "benchmark:cli.benchmark"
 
 [tool.pdm]
 distribution = false
