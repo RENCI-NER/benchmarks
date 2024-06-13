@@ -4,7 +4,7 @@ import urllib
 
 import requests
 
-from comparator.engines.base import BaseNEREngine
+from engines.base import BaseNEREngine
 
 # Configuration: get the SAPBERT URL and figure out the annotate path.
 SAPBERT_URL = os.getenv('SAPBERT_URL', 'https://sap-qdrant.apps.renci.org/')

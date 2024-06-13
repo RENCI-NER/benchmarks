@@ -13,8 +13,8 @@ import requests
 
 from requests.adapters import HTTPAdapter, Retry
 
-from comparator.engines.nameres import NameResNEREngine
-from comparator.engines.sapbert import SAPBERTNEREngine
+from engines.nameres import NameResNEREngine
+from engines.sapbert import SAPBERTNEREngine
 
 # Configuration
 SLEEP_BETWEEN_ROWS = 2

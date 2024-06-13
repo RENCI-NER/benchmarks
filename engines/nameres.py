@@ -3,7 +3,7 @@ import logging
 
 import requests
 
-from comparator.engines.base import BaseNEREngine
+from engines.base import BaseNEREngine
 
 # Configuration: NameRes
 NAMERES_ENDPOINT = os.getenv('NAMERES_ENDPOINT', 'https://name-resolution-sri-dev.apps.renci.org/lookup')
