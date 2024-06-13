@@ -62,4 +62,4 @@ class SAPBERTNEREngine(BaseNEREngine):
 
             annotations.append(annotation)
 
-        return annotations
+        return annotations[:limit]

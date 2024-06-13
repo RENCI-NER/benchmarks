@@ -38,7 +38,7 @@ class GoogleSheetBenchmarks:
             for row in reader:
                 self.rows.append(row)
 
-    def benchmarks(self) -> list[ParameterSet]:
+    def benchmarks(self) -> list[Benchmark]:
         """
         self.rows is the raw list of rows we got back from the Google Sheets. This method transforms that into
         a list of Benchmarks.
@@ -56,7 +56,7 @@ class GoogleSheetBenchmarks:
             if has_nonempty_value(row):
                 benchmark = GoogleSheetBenchmarks.to_benchmark(row)
 
-                trows.append(pytest.param(benchmark))
+                trows.append(benchmark)
 
         return trows
 
@@ -76,7 +76,6 @@ class GoogleSheetBenchmarks:
         # Extract all the
         notes = dict()
         for key in row:
-            key = ""
             if key.lower().endswith(' notes'):
                 notes[key[:-6]] = row[key]
 
