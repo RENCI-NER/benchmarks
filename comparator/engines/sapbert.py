@@ -28,6 +28,10 @@ class SAPBERTNEREngine(BaseNEREngine):
     def annotate(self, text, props, limit=1):
         biolink_type = props.get('biolink_type', '')
 
+        # SAPBERT-Qdrant requires Biolink types that start with 'biolink:'
+        if biolink_type != '' and not biolink_type.startswith('biolink:'):
+            biolink_type = f"biolink:{biolink_type}"
+
         # Make a request to Nemo-Serve.
         request = {
             "text": text,
