@@ -74,10 +74,12 @@ def benchmark(output, google_sheet_id, skip_types, engines):
     # TODO
 
     nameres = NameResNEREngine(session)
-    header.extend(['nameres_id_rank', 'nameres_label_rank', 'nameres_time_sec'])
+    header.extend(['nameres_id_rank', 'nameres_label_rank', 'nameres_time_sec',
+                   'nameres_no_type_id_rank', 'nameres_no_type_label_rank', 'nameres_no_type_time_sec'])
 
     sapbert = SAPBERTNEREngine(session)
-    header.extend(['sapbert_id_rank', 'sapbert_label_rank', 'sapbert_time_sec'])
+    header.extend(['sapbert_id_rank', 'sapbert_label_rank', 'sapbert_time_sec',
+                   'sapbert_no_type_id_rank', 'sapbert_no_type_label_rank', 'sapbert_no_type_time_sec'])
 
     # Stats.
     stats = defaultdict(int)
@@ -121,7 +123,7 @@ def benchmark(output, google_sheet_id, skip_types, engines):
             'notes': ';'.join(notes)
         }
 
-        # Get top NameRes result.
+        # Get top NameRes result with type.
         nameres_results = []
         nameres_start = time.time_ns()
         try:
@@ -147,6 +149,32 @@ def benchmark(output, google_sheet_id, skip_types, engines):
             stats['nameres_count_label_rank'] += 1
 
         logging.info(f"Found NameRes results for '{text}' (type {text_type}) in {row['nameres_time_sec']} seconds: {nameres_results}")
+
+        # Get top NameRes result without type.
+        nameres_results = []
+        nameres_start = time.time_ns()
+        try:
+            nameres_results = nameres.annotate(text, {}, limit=RESULTS_TO_DOWNLOAD)
+        except Exception as inst:
+            logging.error(f"Could not look up {text} in NameRes: {inst}")
+
+        row['nameres_no_type_time_sec'] = f"{float(time.time_ns() - nameres_start)/1000_000_000:.5f}"
+
+        # Did we get the expected ID in the top 10 results?
+        result_ids = list(map(lambda nr: nr['id'], nameres_results))
+        row['nameres_no_type_id_rank'] = rank_str_in_list(benchm.CorrectID, result_ids)
+        if row['nameres_no_type_id_rank']:
+            stats['nameres_no_type_total_id_rank'] += row['nameres_no_type_id_rank']
+            stats['nameres_no_type_count_id_rank'] += 1
+
+        result_labels = list(map(lambda nr: nr.get('label', '').lower(), nameres_results))
+        row['nameres_no_type_label_rank'] = rank_str_in_list(benchm.CorrectLabel.lower(), result_labels)
+        if row['nameres_no_type_label_rank']:
+            stats['nameres_no_type_total_label_rank'] += row['nameres_no_type_label_rank']
+            stats['nameres_no_type_count_label_rank'] += 1
+
+        logging.info(f"Found NameRes results for '{text}' (without type) in {row['nameres_no_type_time_sec']} seconds: {nameres_results}")
+
 
         # Get top SAPBERT result.
         sapbert_results = []
@@ -175,6 +203,31 @@ def benchmark(output, google_sheet_id, skip_types, engines):
 
         logging.info(f"Found SAPBERT results for '{text}' (type {text_type}) in {row['sapbert_time_sec']} seconds: {nameres_results}")
 
+        # Get top SAPBERT result.
+        sapbert_results = []
+        sapbert_start = time.time_ns()
+        try:
+            sapbert_results = sapbert.annotate(text, {}, limit=RESULTS_TO_DOWNLOAD)
+        except Exception as inst:
+            logging.error(f"Could not look up {text} in SAPBERT: {inst}")
+
+        row['sapbert_no_type_time_sec'] = f"{float(time.time_ns() - sapbert_start)/1000_000_000:.5f}"
+
+        # Did we get the expected ID in the top 10 results?
+        result_ids = list(map(lambda nr: nr['id'], sapbert_results))
+        row['sapbert_no_type_id_rank'] = rank_str_in_list(benchm.CorrectID, result_ids)
+        if row['sapbert_no_type_id_rank']:
+            stats['sapbert_no_type_total_id_rank'] += row['sapbert_no_type_id_rank']
+            stats['sapbert_no_type_count_id_rank'] += 1
+
+        result_labels = list(map(lambda nr: nr.get('label', '').lower(), sapbert_results))
+        row['sapbert_no_type_label_rank'] = rank_str_in_list(benchm.CorrectLabel.lower(), result_labels)
+        if row['sapbert_no_type_label_rank']:
+            stats['sapbert_no_type_total_label_rank'] += row['sapbert_no_type_label_rank']
+            stats['sapbert_no_type_count_label_rank'] += 1
+
+        logging.info(f"Found SAPBERT results for '{text}' (type {text_type}) in {row['sapbert_time_sec']} seconds: {nameres_results}")
+
         csv_writer.writerow(row)
 
         # Add a sleep to make sure we don't overload Sterling's ingresses.
@@ -183,16 +236,24 @@ def benchmark(output, google_sheet_id, skip_types, engines):
     # Write out statistics.
     print("Ranked ID results:")
     print(f"\tNameRes: {divide_to_str(stats['nameres_count_id_rank'], len(benchmarks))}")
+    print(f"\tNameRes without type: {divide_to_str(stats['nameres_no_type_count_id_rank'], len(benchmarks))}")
     print(f"\tSAPBERT: {divide_to_str(stats['sapbert_count_id_rank'], len(benchmarks))}")
+    print(f"\tSAPBERT without type: {divide_to_str(stats['sapbert_no_type_count_id_rank'], len(benchmarks))}")
     print("Ranked label results:")
     print(f"\tNameRes: {divide_to_str(stats['nameres_count_label_rank'], len(benchmarks))}")
+    print(f"\tNameRes without type: {divide_to_str(stats['nameres_no_type_count_label_rank'], len(benchmarks))}")
     print(f"\tSAPBERT: {divide_to_str(stats['sapbert_count_label_rank'], len(benchmarks))}")
+    print(f"\tSAPBERT without type: {divide_to_str(stats['sapbert_no_type_count_label_rank'], len(benchmarks))}")
     print("Average ID rank:")
     print(f"\tNameRes: {divide_to_str(stats['nameres_total_id_rank'], stats['nameres_count_id_rank'])}")
+    print(f"\tNameRes without type: {divide_to_str(stats['nameres_no_type_total_id_rank'], stats['nameres_no_type_count_id_rank'])}")
     print(f"\tSAPBERT: {divide_to_str(stats['nameres_total_id_rank'], stats['nameres_count_id_rank'])}")
+    print(f"\tSAPBERT without type: {divide_to_str(stats['nameres_no_type_total_id_rank'], stats['nameres_no_type_count_id_rank'])}")
     print("Average label rank:")
     print(f"\tNameRes: {divide_to_str(stats['nameres_total_label_rank'], stats['nameres_count_label_rank'])}")
+    print(f"\tNameRes without type: {divide_to_str(stats['nameres_no_type_total_label_rank'], stats['nameres_no_type_count_label_rank'])}")
     print(f"\tSAPBERT: {divide_to_str(stats['nameres_total_label_rank'], stats['nameres_count_label_rank'])}")
+    print(f"\tSAPBERT without type: {divide_to_str(stats['nameres_no_type_total_label_rank'], stats['nameres_no_type_count_label_rank'])}")
 
 
 if __name__ == '__main__':
