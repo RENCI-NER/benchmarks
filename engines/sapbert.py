@@ -25,7 +25,7 @@ class SAPBERTNEREngine(BaseNEREngine):
         else:
             self.requests_session = requests.Session()
 
-    def annotate(self, text, props, limit=1):
+    def annotate(self, text, props, limit=10):
         biolink_type = props.get('biolink_type', '')
 
         # SAPBERT-Qdrant requires Biolink types that start with 'biolink:'
