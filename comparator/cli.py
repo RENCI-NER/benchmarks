@@ -6,6 +6,7 @@
 
 import logging
 import csv
+import os.path
 import time
 
 import click
@@ -31,7 +32,7 @@ logging.basicConfig(level=logging.INFO)
 @click.option('engines', '--engine', '-e', type=str, multiple=True, help='The engines to compare')
 @click.option('--csv-dialect', type=click.Choice(csv.list_dialects(), case_sensitive=False),
               help='The CSV dialect to use (see the Python `csv` module for options).')
-@click.option('continue_filename', '--continue', type=click.Path(exists=True, readable=True),
+@click.option('continue_filename', '--continue', type=click.Path(),
               help='An output file which we can continue working on by loading already completed work.')
 def comparator(input_file, output, query, biolink_type, engines, csv_dialect, continue_filename):
     """
@@ -45,13 +46,14 @@ def comparator(input_file, output, query, biolink_type, engines, csv_dialect, co
     # Read the continue filename. We need to read this and then close the file, because it is probably the
     # same file as the output file!
     result_cache = dict()
-    with open(click.format_filename(continue_filename), 'r') as continuef:
-        continue_file_reader = csv.DictReader(continuef, dialect=csv_dialect)
-        for row in continue_file_reader:
-            if query not in row:
-                # This is the cache, anyway. Ignore.
-                continue
-            result_cache[row[query]] = row
+    if continue_filename and os.path.exists(click.format_filename(continue_filename)):
+        with open(click.format_filename(continue_filename), 'r') as continuef:
+            continue_file_reader = csv.DictReader(continuef, dialect=csv_dialect)
+            for row in continue_file_reader:
+                if query not in row:
+                    # This is the cache, anyway. Ignore.
+                    continue
+                result_cache[row[query]] = row
 
     # Set up a repeatable session.
     session = requests.Session()
