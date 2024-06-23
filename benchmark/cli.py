@@ -47,8 +47,9 @@ def divide_to_str(n, d):
 @click.command(name="benchmark")
 @click.option('--output', type=click.File('w'), default='-', help='The file where results should be written as a CSV.')
 @click.option('--google-sheet-id', default=BENCHMARK_GOOGLE_SHEET_ID, help='The Google Sheet ID containing the ')
+@click.option('--skip-types', is_flag=True, default=False, help='Do not use input types when querying terms')
 @click.option('engines', '--engine', '-e', type=str, multiple=True, help='The engines to benchmark')
-def benchmark(output, google_sheet_id, engines):
+def benchmark(output, google_sheet_id, skip_types, engines):
     """
     Run one or more NERs on our standard benchmark results and produce benchmarking results.
     """
@@ -67,7 +68,7 @@ def benchmark(output, google_sheet_id, engines):
     logging.info(f"Loaded {gsm}")
     benchmarks = gsm.benchmarks()
 
-    header = ['query', 'source', 'type', 'correct_type', 'correct_id', 'correct_label', 'notes']
+    header = ['query', 'source', 'provided_type', 'queried_type', 'correct_type', 'correct_id', 'correct_label', 'notes']
 
     # Set up engines.
     # TODO
@@ -99,17 +100,21 @@ def benchmark(output, google_sheet_id, engines):
         if text_type.strip().lower() in {'na', 'none', 'entity', 'biolink:entity', 'namedthing', 'biolink:namedthing'}:
             text_type = ''
 
+        if skip_types:
+            text_type = ''
+
         # Record notes.
         notes = []
         for note_field in benchm.Notes:
-            if note_field in ben
-            notes.append(f"{note_field}: {benchm.Notes[note_field]}")
+            if benchm.Notes[note_field]:
+                notes.append(f"{note_field}: {benchm.Notes[note_field]}")
 
         # Start a result row.
         row = {
             'query': benchm.Query,
             'source': benchm.Source,
-            'type': benchm.Type,
+            'provided_type': benchm.Type,
+            'queried_type': text_type,
             'correct_type': benchm.CorrectType,
             'correct_id': benchm.CorrectID,
             'correct_label': benchm.CorrectLabel,
@@ -141,7 +146,7 @@ def benchmark(output, google_sheet_id, engines):
             stats['nameres_total_label_rank'] += row['nameres_label_rank']
             stats['nameres_count_label_rank'] += 1
 
-        logging.info(f"Found NameRes results for '{text}' in {row['nameres_time_sec']} seconds: {nameres_results}")
+        logging.info(f"Found NameRes results for '{text}' (type {text_type}) in {row['nameres_time_sec']} seconds: {nameres_results}")
 
         # Get top SAPBERT result.
         sapbert_results = []
@@ -165,10 +170,10 @@ def benchmark(output, google_sheet_id, engines):
         result_labels = list(map(lambda nr: nr.get('label', '').lower(), sapbert_results))
         row['sapbert_label_rank'] = rank_str_in_list(benchm.CorrectLabel.lower(), result_labels)
         if row['sapbert_label_rank']:
-            stats['sapbert_total_label_rank'] += row['sapbert_id_rank']
+            stats['sapbert_total_label_rank'] += row['sapbert_label_rank']
             stats['sapbert_count_label_rank'] += 1
 
-        logging.info(f"Found SAPBERT results for '{text}' in {row['sapbert_time_sec']} seconds: {nameres_results}")
+        logging.info(f"Found SAPBERT results for '{text}' (type {text_type}) in {row['sapbert_time_sec']} seconds: {nameres_results}")
 
         csv_writer.writerow(row)
 
