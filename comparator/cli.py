@@ -202,6 +202,7 @@ def comparator(input_file, output, query, biolink_type, engines, csv_dialect, co
         if text_type not in llm_type_mappings:
             logging.warning(f"No mapping available for '{text_type}', using '' instead.")
         text_type = llm_type_mappings.get(text_type, '')
+        row['biolink_type'] = text_type
 
         # Get top NameRes result.
         nameres_results = []
