@@ -31,7 +31,9 @@ logging.basicConfig(level=logging.INFO)
 @click.option('engines', '--engine', '-e', type=str, multiple=True, help='The engines to compare')
 @click.option('--csv-dialect', type=click.Choice(csv.list_dialects(), case_sensitive=False),
               help='The CSV dialect to use (see the Python `csv` module for options).')
-def comparator(input_file, output, query, biolink_type, engines, csv_dialect):
+@click.option('continue_filename', '--continue', type=click.Path(exists=True, readable=True),
+              help='An output file which we can continue working on by loading already completed work.')
+def comparator(input_file, output, query, biolink_type, engines, csv_dialect, continue_filename):
     """
     Run one or more NERs on an input file and produce comparative results.
 
@@ -39,6 +41,17 @@ def comparator(input_file, output, query, biolink_type, engines, csv_dialect):
 
     INPUT_FILE: the file to process. Use '-' to use the standard input stream.
     """
+
+    # Read the continue filename. We need to read this and then close the file, because it is probably the
+    # same file as the output file!
+    result_cache = dict()
+    with open(click.format_filename(continue_filename), 'r') as continuef:
+        continue_file_reader = csv.DictReader(continuef, dialect=csv_dialect)
+        for row in continue_file_reader:
+            if query not in row:
+                # This is the cache, anyway. Ignore.
+                continue
+            result_cache[row[query]] = row
 
     # Set up a repeatable session.
     session = requests.Session()
@@ -76,10 +89,17 @@ def comparator(input_file, output, query, biolink_type, engines, csv_dialect):
             continue
         text = row[query]
 
+        # Do we have this text cached?
+        if text in result_cache:
+            csv_writer.writerow(result_cache[text])
+            continue
+
         if biolink_type not in row:
             logging.warning(f"Type field '{biolink_type}' not found in CSV row: {row}")
             continue
         text_type = row.get(biolink_type, '')
+        if text_type.strip().lower() in {'na', 'none', 'entity', 'biolink:entity', 'namedthing', 'biolink:namedthing'}:
+            text_type = ''
 
         # Get top NameRes result.
         nameres_results = []

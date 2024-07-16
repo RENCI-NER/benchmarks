@@ -7,7 +7,7 @@ import requests
 from comparator.engines.base import BaseNEREngine
 
 # Configuration: get the SAPBERT URL and figure out the annotate path.
-SAPBERT_URL = os.getenv('SAPBERT_URL', 'https://babel-sapbert.apps.renci.org/')
+SAPBERT_URL = os.getenv('SAPBERT_URL', 'https://sap-qdrant.apps.renci.org/')
 SAPBERT_ANNOTATE_ENDPOINT = urllib.parse.urljoin(SAPBERT_URL, '/annotate/')
 SAPBERT_MODEL_NAME = "sapbert"
 SAPBERT_COUNT = 1000  # We've found that 1000 is about the minimum you need for reasonable results.
@@ -27,6 +27,10 @@ class SAPBERTNEREngine(BaseNEREngine):
 
     def annotate(self, text, props, limit=1):
         biolink_type = props.get('biolink_type', '')
+
+        # SAPBERT-Qdrant requires Biolink types that start with 'biolink:'
+        if biolink_type != '' and not biolink_type.startswith('biolink:'):
+            biolink_type = f"biolink:{biolink_type}"
 
         # Make a request to Nemo-Serve.
         request = {
